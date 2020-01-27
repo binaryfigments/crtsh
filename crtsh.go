@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -33,7 +34,7 @@ type CertificateRAW struct {
 type Certificate struct {
 	IssuerCAID        int       `json:"issuer_ca_id,omitempty"`        // "issuer_ca_id": 62131,
 	IssuerName        string    `json:"issuer_name,omitempty"`         //"issuer_name": "C=US, O=DigiCert Inc, OU=www.digicert.com, CN=Thawte RSA CA 2018",
-	NameValue         string    `json:"name_value,omitempty"`          // "name_value": "*.domain.eu",
+	NameValue         []string  `json:"name_value,omitempty"`          // "name_value": "*.domain.eu",
 	MinCertID         int       `json:"min_cert_id,omitempty"`         // "min_cert_id": 2141165848,
 	MinEntryTimestamp time.Time `json:"min_entry_timestamp,omitempty"` // "min_entry_timestamp": "2019-11-22T13:16:54.343",
 	NoteBefore        time.Time `json:"not_before,omitempty"`          // "not_before": "2019-11-22T00:00:00",
@@ -66,7 +67,7 @@ func Get(domain string, timeout time.Duration) *Data {
 	res, getErr := spaceClient.Do(req)
 	if getErr != nil {
 		data.Error = true
-		data.ErrorMessage = err.Error()
+		// data.ErrorMessage = err.Error()
 		return data
 	}
 
@@ -92,19 +93,25 @@ func Get(domain string, timeout time.Duration) *Data {
 		cert.IssuerCAID = c.IssuerCAID
 		cert.IssuerName = c.IssuerName
 		cert.MinCertID = c.MinCertID
-		cert.NameValue = c.NameValue
+
+		sans := strings.Fields(c.NameValue)
+		cert.NameValue = sans
+
 		met, err := changeTime(c.MinEntryTimestamp, "2006-01-02T15:04:05.000")
 		if err == nil {
 			cert.MinEntryTimestamp = met
 		}
+
 		nb, err := changeTime(c.NoteBefore, "2006-01-02T15:04:05")
 		if err == nil {
 			cert.NoteBefore = nb
 		}
+
 		na, err := changeTime(c.NotAfter, "2006-01-02T15:04:05")
 		if err == nil {
 			cert.NotAfter = na
 		}
+
 		certs = append(certs, cert)
 	}
 

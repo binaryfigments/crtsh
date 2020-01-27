@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	data := crtsh.Get("badssl.com", 5)
+	data := crtsh.Get("networking4all.com", 5)
 
 	json, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {

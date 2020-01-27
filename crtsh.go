@@ -18,8 +18,8 @@ type Data struct {
 
 // TODO: translating timestamps
 
-// Certificate struct for crt.sh certificates
-type Certificate struct {
+// CertificateRAW struct for crt.sh certificates
+type CertificateRAW struct {
 	IssuerCAID        int    `json:"issuer_ca_id,omitempty"`        // "issuer_ca_id": 62131,
 	IssuerName        string `json:"issuer_name,omitempty"`         //"issuer_name": "C=US, O=DigiCert Inc, OU=www.digicert.com, CN=Thawte RSA CA 2018",
 	NameValue         string `json:"name_value,omitempty"`          // "name_value": "*.domain.eu",
@@ -27,6 +27,17 @@ type Certificate struct {
 	MinEntryTimestamp string `json:"min_entry_timestamp,omitempty"` // "min_entry_timestamp": "2019-11-22T13:16:54.343",
 	NoteBefore        string `json:"not_before,omitempty"`          // "not_before": "2019-11-22T00:00:00",
 	NotAfter          string `json:"not_after,omitempty"`           // "not_after": "2020-11-21T12:00:00"
+}
+
+// Certificate struct for crt.sh certificates
+type Certificate struct {
+	IssuerCAID        int       `json:"issuer_ca_id,omitempty"`        // "issuer_ca_id": 62131,
+	IssuerName        string    `json:"issuer_name,omitempty"`         //"issuer_name": "C=US, O=DigiCert Inc, OU=www.digicert.com, CN=Thawte RSA CA 2018",
+	NameValue         string    `json:"name_value,omitempty"`          // "name_value": "*.domain.eu",
+	MinCertID         int       `json:"min_cert_id,omitempty"`         // "min_cert_id": 2141165848,
+	MinEntryTimestamp time.Time `json:"min_entry_timestamp,omitempty"` // "min_entry_timestamp": "2019-11-22T13:16:54.343",
+	NoteBefore        time.Time `json:"not_before,omitempty"`          // "not_before": "2019-11-22T00:00:00",
+	NotAfter          time.Time `json:"not_after,omitempty"`           // "not_after": "2020-11-21T12:00:00"
 }
 
 // https://crt.sh/?q=%25.domain.eu&output=json
@@ -66,29 +77,47 @@ func Get(domain string, timeout time.Duration) *Data {
 		return data
 	}
 
-	certificates := []Certificate{}
+	certificates := []CertificateRAW{}
 	jsonErr := json.Unmarshal(body, &certificates)
 	if jsonErr != nil {
 		data.Error = true
 		data.ErrorMessage = jsonErr.Error()
 		return data
 	}
-	data.Certificates = certificates
+
+	certs := []Certificate{}
+
+	for _, c := range certificates {
+		cert := Certificate{}
+		cert.IssuerCAID = c.IssuerCAID
+		cert.IssuerName = c.IssuerName
+		cert.MinCertID = c.MinCertID
+		cert.NameValue = c.NameValue
+		met, err := changeTime(c.MinEntryTimestamp, "2006-01-02T15:04:05.000")
+		if err == nil {
+			cert.MinEntryTimestamp = met
+		}
+		nb, err := changeTime(c.NoteBefore, "2006-01-02T15:04:05")
+		if err == nil {
+			cert.NoteBefore = nb
+		}
+		na, err := changeTime(c.NotAfter, "2006-01-02T15:04:05")
+		if err == nil {
+			cert.NotAfter = na
+		}
+		certs = append(certs, cert)
+	}
+
+	data.Certificates = certs
 
 	return data
 }
 
-/*
-
-TODO:
-
-Passing string to sime:
-	layout := "2006-01-02T15:04:05.000"
-	str := "2019-11-22T13:16:54.343"
-	t, err := time.Parse(layout, str)
-
+// changeTime function is QaD.
+func changeTime(date string, layout string) (time.Time, error) {
+	t, err := time.Parse(layout, date)
 	if err != nil {
-		fmt.Println(err)
+		return time.Now(), err
 	}
-	fmt.Println(t)
-*/
+	return t, nil
+}

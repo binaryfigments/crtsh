@@ -50,7 +50,7 @@ func Get(domain string, timeout time.Duration) *Data {
 		return data
 	}
 
-	req.Header.Set("User-Agent", "Mozilla Centric")
+	req.Header.Set("User-Agent", "Mozilla")
 
 	res, getErr := spaceClient.Do(req)
 	if getErr != nil {
@@ -77,3 +77,18 @@ func Get(domain string, timeout time.Duration) *Data {
 
 	return data
 }
+
+/*
+
+TODO:
+
+Passing string to sime:
+	layout := "2006-01-02T15:04:05.000"
+	str := "2019-11-22T13:16:54.343"
+	t, err := time.Parse(layout, str)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(t)
+*/

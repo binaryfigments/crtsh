@@ -41,6 +41,7 @@ type Certificate struct {
 	NoteBefore        time.Time `json:"not_before,omitempty"`          // "not_before": "2019-11-22T00:00:00",
 	NotAfter          time.Time `json:"not_after,omitempty"`           // "not_after": "2020-11-21T12:00:00"
 	Expired           bool
+	Replace           bool
 }
 
 // https://crt.sh/?q=%25.domain.eu&output=json
@@ -119,10 +120,18 @@ func Get(domain string, timeout time.Duration) *Data {
 		// a := today.Unix()
 		// b := na.Before(today)
 
+		daysNext := today.AddDate(0, 0, 30)
+
 		if na.Before(today) {
 			cert.Expired = true
 		} else {
 			cert.Expired = false
+		}
+
+		if na.After(today) && na.Before(daysNext) {
+			cert.Replace = true
+		} else {
+			cert.Replace = false
 		}
 
 		certs = append(certs, cert)

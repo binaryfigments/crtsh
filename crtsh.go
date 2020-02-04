@@ -11,6 +11,7 @@ import (
 // A Data struct for returning data.
 type Data struct {
 	Domain       string
+	Time         time.Time
 	Timeout      time.Duration
 	Certificates []Certificate
 	Error        bool   `json:"error"`
@@ -39,6 +40,7 @@ type Certificate struct {
 	MinEntryTimestamp time.Time `json:"min_entry_timestamp,omitempty"` // "min_entry_timestamp": "2019-11-22T13:16:54.343",
 	NoteBefore        time.Time `json:"not_before,omitempty"`          // "not_before": "2019-11-22T00:00:00",
 	NotAfter          time.Time `json:"not_after,omitempty"`           // "not_after": "2020-11-21T12:00:00"
+	Expired           bool
 }
 
 // https://crt.sh/?q=%25.domain.eu&output=json
@@ -48,6 +50,8 @@ func Get(domain string, timeout time.Duration) *Data {
 	data := new(Data)
 	data.Domain = domain
 	data.Timeout = timeout
+	today := time.Now()
+	data.Time = today
 
 	url := "https://crt.sh/?q=%25." + domain + "&output=json"
 
@@ -110,6 +114,15 @@ func Get(domain string, timeout time.Duration) *Data {
 		na, err := changeTime(c.NotAfter, "2006-01-02T15:04:05")
 		if err == nil {
 			cert.NotAfter = na
+		}
+
+		// a := today.Unix()
+		// b := na.Before(today)
+
+		if na.Before(today) {
+			cert.Expired = true
+		} else {
+			cert.Expired = false
 		}
 
 		certs = append(certs, cert)

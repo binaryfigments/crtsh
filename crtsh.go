@@ -47,7 +47,7 @@ type Certificate struct {
 // https://crt.sh/?q=%25.domain.eu&output=json
 
 // Get function for pulling certificates from crt.sh
-func Get(domain string, timeout time.Duration) *Data {
+func Get(domain string, timeout time.Duration, days int) *Data {
 	data := new(Data)
 	data.Domain = domain
 	data.Timeout = timeout
@@ -121,7 +121,7 @@ func Get(domain string, timeout time.Duration) *Data {
 		// a := today.Unix()
 		// b := na.Before(today)
 
-		daysNext := today.AddDate(0, 0, 30)
+		daysNext := today.AddDate(0, 0, days)
 
 		if na.Before(today) {
 			cert.Expired = true

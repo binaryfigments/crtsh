@@ -72,7 +72,8 @@ func Get(domain string, timeout time.Duration) *Data {
 	res, getErr := spaceClient.Do(req)
 	if getErr != nil {
 		data.Error = true
-		// data.ErrorMessage = err.Error()
+		// troubles here sometimes
+		data.ErrorMessage = "Error executing request."
 		return data
 	}
 

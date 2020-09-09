@@ -130,9 +130,9 @@ func Get(domain string, timeout time.Duration, days int) *Data {
 		}
 
 		if na.After(today) && na.Before(daysNext) {
-			cert.Replace = false
-		} else {
 			cert.Replace = true
+		} else {
+			cert.Replace = false
 		}
 
 		certs = append(certs, cert)
